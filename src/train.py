@@ -18,9 +18,6 @@ from sklearn.metrics import (
     roc_curve,
 )
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import Pipeline
-
-from pipeline import build_preprocessor
 
 
 RANDOM_STATE = 42
@@ -28,52 +25,55 @@ TARGET = "stroke"
 ID_COLUMN = "id"
 
 
-def load_dataset(input_path: Path) -> tuple[pd.DataFrame, pd.Series]:
-    df = pd.read_csv(input_path)
-    X = df.drop(columns=[TARGET, ID_COLUMN], errors="ignore")
-    y = df[TARGET].astype(int)
-    return X, y
+def load_processed_dataset(processed_dir: Path) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+    paths = {
+        "X_train": processed_dir / "X_train.csv",
+        "y_train": processed_dir / "y_train.csv",
+        "X_test": processed_dir / "X_test.csv",
+        "y_test": processed_dir / "y_test.csv",
+    }
+    missing_files = [str(path) for path in paths.values() if not path.is_file()]
+    if missing_files:
+        raise FileNotFoundError(
+            "Dados pre-processados ausentes. Execute o pre-processamento antes do treino: "
+            + ", ".join(missing_files)
+        )
+
+    X_train = pd.read_csv(paths["X_train"])
+    y_train = pd.read_csv(paths["y_train"]).squeeze("columns").astype(int)
+    X_test = pd.read_csv(paths["X_test"])
+    y_test = pd.read_csv(paths["y_test"]).squeeze("columns").astype(int)
+
+    if len(X_train) != len(y_train) or len(X_test) != len(y_test):
+        raise ValueError("As features e os rótulos pre-processados possuem tamanhos diferentes.")
+
+    return X_train, y_train, X_test, y_test
 
 
-def split_data(
+def split_training_data(
     X: pd.DataFrame,
     y: pd.Series,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, pd.Series]:
-    X_train_val, X_test, y_train_val, y_test = train_test_split(
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    X_train, X_val, y_train, y_val = train_test_split(
         X,
         y,
-        test_size=0.20,
+        test_size=0.25,
         random_state=RANDOM_STATE,
         stratify=y,
     )
-    X_train, X_val, y_train, y_val = train_test_split(
-        X_train_val,
-        y_train_val,
-        test_size=0.25,
+    return X_train, X_val, y_train, y_val
+
+
+def build_model() -> LogisticRegression:
+    return LogisticRegression(
+        class_weight="balanced",
+        max_iter=2000,
         random_state=RANDOM_STATE,
-        stratify=y_train_val,
-    )
-    return X_train, X_val, X_test, y_train, y_val, y_test
-
-
-def build_model() -> Pipeline:
-    return Pipeline(
-        steps=[
-            ("preprocessor", build_preprocessor()),
-            (
-                "model",
-                LogisticRegression(
-                    class_weight="balanced",
-                    max_iter=2000,
-                    random_state=RANDOM_STATE,
-                    solver="liblinear",
-                ),
-            ),
-        ]
+        solver="liblinear",
     )
 
 
-def predict_scores(model: Pipeline, X: pd.DataFrame) -> np.ndarray:
+def predict_scores(model: LogisticRegression, X: pd.DataFrame) -> np.ndarray:
     if hasattr(model, "predict_proba"):
         return model.predict_proba(X)[:, 1]
     return model.decision_function(X)
@@ -115,7 +115,7 @@ def evaluate_predictions(
 
 
 def evaluate_model(
-    model: Pipeline,
+    model: LogisticRegression,
     X_train: pd.DataFrame,
     y_train: pd.Series,
     X_val: pd.DataFrame,
@@ -224,18 +224,20 @@ def class_counts(y: pd.Series) -> dict[str, int]:
 
 
 def run_training(
-    input_path: str = "data/raw/healthcare-dataset-stroke-data.csv",
+    processed_dir: str = "data/processed",
     models_dir: str = "models",
     reports_dir: str = "reports",
 ) -> dict[str, object]:
-    input_path_obj = Path(input_path)
+    processed_path = Path(processed_dir)
     models_path = Path(models_dir)
     reports_path = Path(reports_dir)
     models_path.mkdir(parents=True, exist_ok=True)
     reports_path.mkdir(parents=True, exist_ok=True)
 
-    X, y = load_dataset(input_path_obj)
-    X_train, X_val, X_test, y_train, y_val, y_test = split_data(X, y)
+    X_train_processed, y_train_processed, X_test, y_test = load_processed_dataset(processed_path)
+    X_train, X_val, y_train, y_val = split_training_data(
+        X_train_processed, y_train_processed
+    )
 
     model_name = "logistic_regression_balanced"
     validation_model = build_model()
@@ -266,7 +268,8 @@ def run_training(
         "threshold": threshold,
         "target": TARGET,
         "model_name": model_name,
-        "features": list(X.columns),
+        "features": list(X_train.columns),
+        "data_source": processed_path.as_posix(),
     }
     joblib.dump(artifact, model_path)
     save_roc_curve(y_test, y_test_score, roc_curve_path)
