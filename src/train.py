@@ -6,6 +6,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -62,6 +63,15 @@ def split_training_data(
         stratify=y,
     )
     return X_train, X_val, y_train, y_val
+
+
+def resample_with_smote(X: pd.DataFrame, y: pd.Series) -> tuple[pd.DataFrame, pd.Series]:
+    """Aplica SMOTE somente aos dados que serão usados para ajustar o modelo.
+
+    Nunca deve ser chamada sobre validação ou teste: a validação precisa refletir a
+    distribuição real da classe para que o threshold escolhido generalize para o teste.
+    """
+    return SMOTE(random_state=RANDOM_STATE).fit_resample(X, y)
 
 
 def build_model() -> LogisticRegression:
@@ -121,7 +131,8 @@ def evaluate_model(
     X_val: pd.DataFrame,
     y_val: pd.Series,
 ) -> tuple[float, dict[str, object]]:
-    model.fit(X_train, y_train)
+    X_train_resampled, y_train_resampled = resample_with_smote(X_train, y_train)
+    model.fit(X_train_resampled, y_train_resampled)
     y_val_score = predict_scores(model, X_val)
     threshold = choose_threshold(y_val, y_val_score)
     validation_metrics = evaluate_predictions(y_val, y_val_score, threshold)
@@ -252,7 +263,8 @@ def run_training(
     final_model = build_model()
     X_train_val = pd.concat([X_train, X_val], axis=0)
     y_train_val = pd.concat([y_train, y_val], axis=0)
-    final_model.fit(X_train_val, y_train_val)
+    X_train_val_resampled, y_train_val_resampled = resample_with_smote(X_train_val, y_train_val)
+    final_model.fit(X_train_val_resampled, y_train_val_resampled)
 
     y_test_score = predict_scores(final_model, X_test)
     test_metrics = evaluate_predictions(y_test, y_test_score, threshold)

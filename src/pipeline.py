@@ -7,7 +7,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, FunctionTransformer
-from imblearn.over_sampling import SMOTE
 import joblib
 
 def load_data(filepath):
@@ -99,26 +98,24 @@ def run_etl(input_path, output_dir):
     
     X_train_processed = preprocessor.fit_transform(X_train)
     X_test_processed = preprocessor.transform(X_test)
-    
-    print("Aplicando SMOTE para balancear a classe alvo no treino...")
-    smote = SMOTE(random_state=42)
-    X_train_resampled, y_train_resampled = smote.fit_resample(X_train_processed, y_train)
-    
+
     os.makedirs(output_dir, exist_ok=True)
-    
+
     feature_names = preprocessor.named_steps['column_transformer'].get_feature_names_out()
-    
-    pd.DataFrame(X_train_resampled, columns=feature_names).to_csv(os.path.join(output_dir, 'X_train.csv'), index=False)
-    y_train_resampled.to_csv(os.path.join(output_dir, 'y_train.csv'), index=False)
-    
+
+    # SMOTE não é aplicado aqui: X_train.csv mantém a distribuição real (~4.8% AVC) para que
+    # o split treino/validação feito em src/train.py não seja contaminado por amostras sintéticas.
+    # O balanceamento é aplicado em src/train.py somente na porção efetiva de treino.
+    pd.DataFrame(X_train_processed, columns=feature_names).to_csv(os.path.join(output_dir, 'X_train.csv'), index=False)
+    y_train.to_csv(os.path.join(output_dir, 'y_train.csv'), index=False)
+
     pd.DataFrame(X_test_processed, columns=feature_names).to_csv(os.path.join(output_dir, 'X_test.csv'), index=False)
     y_test.to_csv(os.path.join(output_dir, 'y_test.csv'), index=False)
-    
+
     joblib.dump(preprocessor, os.path.join(output_dir, 'preprocessor.pkl'))
-    
+
     print(f"ETL concluído com sucesso! Dados salvos na pasta: {output_dir}")
-    print(f"  Tamanho do treino antes do SMOTE: {X_train_processed.shape[0]} amostras (Desbalanceado)")
-    print(f"  Tamanho do treino após o SMOTE: {X_train_resampled.shape[0]} amostras (Balanceado)")
+    print(f"  Tamanho do treino: {X_train_processed.shape[0]} amostras (distribuição original, sem SMOTE)")
 
 if __name__ == "__main__":
     sys.modules["pipeline"] = sys.modules["__main__"]

@@ -182,7 +182,7 @@ with st.sidebar:
     
     st.markdown("---")
     if artifact is not None:
-        threshold_val = artifact.get('threshold', 0.6890)
+        threshold_val = artifact.get('threshold', 0.7278)
         st.markdown(f"**Status:** Modelo ativo<br>**Limiar de corte:** `{threshold_val:.4f}`", unsafe_allow_html=True)
     else:
         st.error("Modelo não encontrado em models/stroke_risk_model.joblib.")
@@ -374,15 +374,15 @@ elif page == "Desempenho do Modelo":
         t_col1, t_col2, t_col3, t_col4, t_col5 = st.columns(5)
         
         with t_col1:
-            st.metric("ROC AUC", f"{test_m.get('roc_auc', 0.8413):.4f}")
+            st.metric("ROC AUC", f"{test_m.get('roc_auc', 0.8409):.4f}")
         with t_col2:
-            st.metric("Recall (Sensibilidade)", f"{test_m.get('recall', 0.6800):.2%}")
+            st.metric("Recall (Sensibilidade)", f"{test_m.get('recall', 0.6000):.2%}")
         with t_col3:
-            st.metric("Precisão", f"{test_m.get('precision', 0.2036):.2%}")
+            st.metric("Precisão", f"{test_m.get('precision', 0.2055):.2%}")
         with t_col4:
-            st.metric("F1-Score", f"{test_m.get('f1_score', 0.3134):.4f}")
+            st.metric("F1-Score", f"{test_m.get('f1_score', 0.3061):.4f}")
         with t_col5:
-            st.metric("Limiar de Corte", f"{test_m.get('threshold', 0.6890):.4f}")
+            st.metric("Limiar de Corte", f"{test_m.get('threshold', 0.7278):.4f}")
             
     st.markdown("---")
     
@@ -505,7 +505,6 @@ elif page == "Metodologia e Pipeline":
                 <li><b>Tratamento de nulos:</b> Imputação pela mediana em <code>bmi</code> através do <code>SimpleImputer</code>.</li>
                 <li><b>Discretização (Binning):</b> Criação das variáveis categóricas <code>age_group</code> (0-18, 19-35, 36-60, 60+) e <code>glucose_group</code> (&lt;100, 100-125, &ge;126) utilizando <code>pd.cut</code> em um <code>FunctionTransformer</code> integrado.</li>
                 <li><b>Codificação e Escalonamento:</b> Aplicação unificada de <code>StandardScaler</code> e <code>OneHotEncoder</code> pelo <code>ColumnTransformer</code>.</li>
-                <li><b>Sobreamostragem:</b> Aplicação do algoritmo <code>SMOTE</code> exclusivamente no conjunto de treino na etapa de processamento bruto, equilibrando a amostra para 7.778 observações.</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -516,8 +515,9 @@ elif page == "Metodologia e Pipeline":
             <h4>Fase 3: Treinamento, Calibração e Avaliação</h4>
             <ul style="opacity: 0.8; line-height: 1.6;">
                 <li><b>Modelagem quantitativa:</b> Regressão Logística com regularização e penalização proporcional de classes (<code>class_weight="balanced"</code>).</li>
-                <li><b>Calibração de limiar:</b> Separação de 20% para teste independente e 20% para validação. Na partição de validação, a curva Precisão-Recall é calculada para definir o limiar ótimo que maximiza o <code>F1-Score</code>.</li>
-                <li><b>Métricas finais no teste:</b> Atingimento de ROC AUC de <b>0.8413</b> e Recall (sensibilidade clínica) de <b>68.00%</b>.</li>
+                <li><b>Sobreamostragem sem vazamento:</b> Separação de 20% para teste independente e 20% para validação <i>antes</i> de qualquer balanceamento. O <code>SMOTE</code> é aplicado somente sobre a porção efetiva de treino (60%), garantindo que a validação e o teste preservem a prevalência real de AVC (~4.8%) usada para calibrar o limiar de decisão.</li>
+                <li><b>Calibração de limiar:</b> Na partição de validação (com distribuição real), a curva Precisão-Recall é calculada para definir o limiar ótimo que maximiza o <code>F1-Score</code>.</li>
+                <li><b>Métricas finais no teste:</b> Atingimento de ROC AUC de <b>0.8409</b> e Recall (sensibilidade clínica) de <b>60.00%</b>.</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
