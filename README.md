@@ -6,10 +6,10 @@ Projeto prático interdisciplinar de Ciência de Dados, Engenharia de Dados e An
 
 ## Componentes do Grupo
 
-- **Livia Vitória da Silva** — *(Matrícula / Papel no Projeto)*
-- **Laura Beatriz Luna Maia** — *(Matrícula / Papel no Projeto)*
-- **Marya Eduarda** — *(Matrícula / Papel no Projeto)*
-- **Danilo Ladeira de Oliveira Cosme** — *(Matrícula / Papel no Projeto)*
+- **Livia Vitória da Silva**
+- **Laura Beatriz Luna Maia** 
+- **Marya Eduarda** 
+- **Danilo Ladeira de Oliveira Cosme** 
 
 *(Substitua os campos acima pelos nomes e dados reais dos integrantes do grupo).*
 
