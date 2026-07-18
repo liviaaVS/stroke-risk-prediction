@@ -6,10 +6,10 @@ Projeto prático interdisciplinar de Ciência de Dados, Engenharia de Dados e An
 
 ## Componentes do Grupo
 
-- **[Insira o Nome do Aluno 1]** — *(Matrícula / Papel no Projeto)*
-- **[Insira o Nome do Aluno 2]** — *(Matrícula / Papel no Projeto)*
-- **[Insira o Nome do Aluno 3]** — *(Matrícula / Papel no Projeto)*
-- **[Insira o Nome do Aluno 4]** — *(Matrícula / Papel no Projeto)*
+- **Livia Vitória da Silva** — *(Matrícula / Papel no Projeto)*
+- **Laura Beatriz Luna Maia** — *(Matrícula / Papel no Projeto)*
+- **Marya Eduarda** — *(Matrícula / Papel no Projeto)*
+- **Danilo Ladeira de Oliveira Cosme** — *(Matrícula / Papel no Projeto)*
 
 *(Substitua os campos acima pelos nomes e dados reais dos integrantes do grupo).*
 
@@ -140,6 +140,10 @@ streamlit run app/app.py
 ```
 > *O terminal exibirá uma URL local (geralmente `http://localhost:8501`). O navegador será aberto automaticamente com o sistema quantitativo de suporte à decisão.*
 
+Ou acesse a url remota
+[https://predicao-risco-avc.streamlit.app/#parametros-biometricos-e-clinicos](https://predicao-risco-avc.streamlit.app/#parametros-biometricos-e-clinicos)
+
+> 
 ---
 
 ## Resumo das Fases do Projeto
